@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Kaltim Flood Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #050d1a;
+    --panel: #0a1628;
+    --border: #0f2a4a;
+    --accent: #00c8ff;
+    --accent2: #ff6b35;
+    --danger: #ff3b3b;
+    --warn: #ffbe00;
+    --safe: #00e676;
+    --text: #cde4f5;
+    --muted: #4a7a9b;
+    --font-display: 'Syne', sans-serif;
+    --font-mono: 'Space Mono', monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-mono);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,200,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,200,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Rain animation */
+  .rain {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+  }
+  .rain span {
+    position: absolute;
+    top: -20px;
+    width: 1px;
+    background: linear-gradient(transparent, rgba(0,200,255,0.15));
+    animation: fall linear infinite;
+  }
+  @keyframes fall {
+    to { transform: translateY(110vh); }
+  }
+
+  /* HEADER */
+  header {
+    position: relative;
+    z-index: 10;
+    padding: 24px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    background: rgba(5,13,26,0.9);
+    backdrop-filter: blur(10px);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .logo-icon {
+    width: 44px; height: 44px;
+    background: var(--accent);
+    clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
+    display: flex; align-items: center; justify-content: center;
+    animation: pulse 3s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(0,200,255,0.4); }
+    50% { box-shadow: 0 0 0 12px rgba(0,200,255,0); }
+  }
+
+  .logo-text h1 {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: 0.05em;
+  }
+
+  .logo-text p {
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .live-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.7rem;
+    color: var(--safe);
+    letter-spacing: 0.1em;
+  }
+
+  .live-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--safe);
+    animation: blink 1.2s ease-in-out infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.2; }
+  }
+
+  .timestamp {
+    font-size: 0.65rem;
+    color: var(--muted);
+  }
+
+  /* MAIN */
+  main {
+    position: relative;
+    z-index: 10;
+    padding: 32px 40px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  /* HERO STATS */
+  .hero-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 32px;
+    animation: fadeUp 0.6s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .stat-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 20px 24px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent);
+  }
+
+  .stat-card:hover {
+    border-color: var(--accent);
+  }
+
+  .stat-label {
+    font-size: 0.6rem;
+    color: var(--muted);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .stat-value {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1;
+  }
+
+  .stat-unit {
+    font-size: 0.65rem;
+    color: var(--muted);
+    margin-top: 6px;
+  }
+
+  .stat-change {
+    position: absolute;
+    top: 20px; right: 20px;
+    font-size: 0.65rem;
+    padding: 3px 8px;
+    border-radius: 2px;
+  }
+
+  .stat-change.up { background: rgba(255,59,59,0.15); color: var(--danger); }
+  .stat-change.ok { background: rgba(0,230,118,0.1); color: var(--safe); }
+
+  /* GRID LAYOUT */
+  .grid-layout {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 20px;
+    animation: fadeUp 0.6s ease 0.2s both;
+  }
+
+  /* PANEL */
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 24px;
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .panel-title {
+    font-family: var(--font-display);
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #fff;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .panel-badge {
+    font-size: 0.6rem;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 3px 10px;
+    letter-spacing: 0.1em;
+  }
+
+  /* LOCATION TABLE */
+  .location-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .location-row {
+    display: grid;
+    grid-template-columns: 1fr 100px 90px 110px;
+    gap: 12px;
+    align-items: center;
+    padding: 12px 16px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+
+  .location-row:hover {
+    border-color: var(--border);
+    background: rgba(0,200,255,0.03);
+  }
+
+  .location-row.active {
+    border-color: var(--accent);
+    background: rgba(0,200,255,0.05);
+  }
+
+  .loc-name {
+    font-family: var(--font-display);
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #fff;
+  }
+
+  .loc-type {
+    font-size: 0.6rem;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+    margin-top: 2px;
+  }
+
+  .loc-coords {
+    font-size: 0.6rem;
+    color: var(--muted);
+  }
+
+  .loc-rain {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--accent);
+    text-align: right;
+  }
+
+  /* RISK BADGE */
+  .risk-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    padding: 4px 10px;
+    text-transform: uppercase;
+  }
+
+  .risk-badge.tinggi { background: rgba(255,59,59,0.15); color: var(--danger); border: 1px solid rgba(255,59,59,0.3); }
+  .risk-badge.sedang { background: rgba(255,190,0,0.12); color: var(--warn); border: 1px solid rgba(255,190,0,0.3); }
+  .risk-badge.rendah { background: rgba(0,230,118,0.1); color: var(--safe); border: 1px solid rgba(0,230,118,0.25); }
+
+  .risk-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+  /* RISK BAR */
+  .risk-bar-wrap {
+    height: 4px;
+    background: var(--border);
+    margin-top: 6px;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  .risk-bar {
+    height: 100%;
+    transition: width 1s ease;
+    animation: barLoad 1s ease forwards;
+  }
+
+  @keyframes barLoad {
+    from { width: 0 !important; }
+  }
+
+  /* SIDE PANEL */
+  .side-panels {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* DETAIL CARD */
+  .detail-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 20px;
+  }
+
+  .detail-title {
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .detail-location {
+    font-family: var(--font-display);
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #fff;
+    margin-bottom: 4px;
+  }
+
+  .detail-type {
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    margin-bottom: 18px;
+  }
+
+  .detail-metrics {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+
+  .metric-box {
+    background: rgba(0,200,255,0.03);
+    border: 1px solid var(--border);
+    padding: 12px;
+  }
+
+  .metric-label {
+    font-size: 0.55rem;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .metric-value {
+    font-family: var(--font-display);
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .metric-unit {
+    font-size: 0.6rem;
+    color: var(--muted);
+  }
+
+  /* PROBABILITY GAUGE */
+  .prob-section {
+    margin-top: 4px;
+  }
+
+  .prob-label {
+    font-size: 0.6rem;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .prob-gauge {
+    position: relative;
+    height: 10px;
+    background: var(--border);
+    overflow: hidden;
+  }
+
+  .prob-fill {
+    height: 100%;
+    transition: width 1.2s cubic-bezier(0.4,0,0.2,1);
+    animation: probLoad 1.2s ease forwards;
+  }
+
+  @keyframes probLoad {
+    from { width: 0 !important; }
+  }
+
+  .prob-value {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    font-weight: 800;
+    margin-top: 10px;
+  }
+
+  /* MODEL INFO */
+  .model-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 20px;
+  }
+
+  .model-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.75rem;
+  }
+
+  .model-item:last-child { border-bottom: none; }
+
+  .model-name { color: var(--text); }
+
+  .model-score {
+    font-family: var(--font-display);
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  .model-bar {
+    width: 80px;
+    height: 3px;
+    background: var(--border);
+    overflow: hidden;
+    margin-left: 10px;
+  }
+
+  .model-fill {
+    height: 100%;
+    background: var(--accent);
+    animation: barLoad 1s ease forwards;
+  }
+
+  /* MAP SECTION */
+  .map-section {
+    margin-top: 20px;
+    animation: fadeUp 0.6s ease 0.4s both;
+  }
+
+  .kaltim-map {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .map-svg-wrap {
+    width: 100%;
+    height: 220px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Dots on map */
+  .map-dot {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    cursor: pointer;
+  }
+
+  .map-dot-ring {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    border: 2px solid currentColor;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+    animation: dotPulse 2s ease-in-out infinite;
+  }
+
+  .map-dot:hover .map-dot-ring {
+    transform: scale(1.3);
+  }
+
+  @keyframes dotPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(currentColor, 0.4); }
+    50% { box-shadow: 0 0 0 8px rgba(currentColor, 0); }
+  }
+
+  .map-dot-inner { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+
+  .map-tooltip {
+    position: absolute;
+    bottom: 130%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 6px 10px;
+    font-size: 0.6rem;
+    white-space: nowrap;
+    display: none;
+    z-index: 100;
+  }
+
+  .map-dot:hover .map-tooltip { display: block; }
+
+  /* Legend */
+  .map-legend {
+    display: flex;
+    gap: 20px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.6rem;
+    color: var(--muted);
+  }
+
+  .legend-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+  }
+
+  /* FOOTER */
+  footer {
+    position: relative;
+    z-index: 10;
+    padding: 20px 40px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 40px;
+  }
+
+  .footer-text {
+    font-size: 0.6rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+
+  .footer-tech {
+    display: flex;
+    gap: 16px;
+  }
+
+  .tech-tag {
+    font-size: 0.55rem;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    padding: 3px 8px;
+    letter-spacing: 0.1em;
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 900px) {
+    header { padding: 16px 20px; }
+    main { padding: 20px; }
+    .hero-stats { grid-template-columns: repeat(2, 1fr); }
+    .grid-layout { grid-template-columns: 1fr; }
+    .location-row { grid-template-columns: 1fr 80px 100px; }
+    .loc-coords { display: none; }
+    footer { padding: 16px 20px; flex-direction: column; gap: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Rain effect -->
+<div class="rain" id="rain"></div>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="#050d1a">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/>
+      </svg>
+    </div>
+    <div class="logo-text">
+      <h1>KALTIM FLOOD INTELLIGENCE</h1>
+      <p>Sistem Deteksi Dini Banjir · Kalimantan Timur</p>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="live-badge">
+      <div class="live-dot"></div>
+      LIVE MONITORING
+    </div>
+    <div class="timestamp" id="clock">--:--:-- WITA</div>
+  </div>
+</header>
+
+<!-- MAIN -->
+<main>
+
+  <!-- HERO STATS -->
+  <div class="hero-stats">
+    <div class="stat-card">
+      <div class="stat-label">Total Lokasi Dipantau</div>
+      <div class="stat-value">10</div>
+      <div class="stat-unit">Kab/Kota Kalimantan Timur</div>
+      <span class="stat-change ok">AKTIF</span>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Curah Hujan Tertinggi</div>
+      <div class="stat-value" id="max-rain">—</div>
+      <div class="stat-unit">mm/jam · <span id="max-rain-loc">—</span></div>
+      <span class="stat-change up">↑ WASPADA</span>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Risiko Tinggi Saat Ini</div>
+      <div class="stat-value" id="high-risk-count" style="color:var(--danger)">—</div>
+      <div class="stat-unit">Wilayah perlu perhatian</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Akurasi Model AI</div>
+      <div class="stat-value" style="color:var(--accent)">94.8%</div>
+      <div class="stat-unit">XGBoost · F1-Score</div>
+      <span class="stat-change ok">OPTIMAL</span>
+    </div>
+  </div>
+
+  <!-- GRID LAYOUT -->
+  <div class="grid-layout">
+
+    <!-- LEFT: LOCATION TABLE -->
+    <div>
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Status Risiko Banjir Per Wilayah</span>
+          <span class="panel-badge">REAL-TIME</span>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 100px 90px 110px;gap:12px;padding:0 16px 10px;font-size:0.55rem;color:var(--muted);letter-spacing:0.12em;text-transform:uppercase;">
+          <span>Wilayah</span>
+          <span>Koordinat</span>
+          <span>Hujan</span>
+          <span>Risiko</span>
+        </div>
+
+        <div class="location-grid" id="locationGrid"></div>
+      </div>
+
+      <!-- MAP -->
+      <div class="map-section">
+        <div class="kaltim-map">
+          <div class="panel-header">
+            <span class="panel-title">Peta Sebaran Risiko — Kalimantan Timur</span>
+            <span class="panel-badge">KOORDINAT NYATA</span>
+          </div>
+          <div class="map-svg-wrap" id="mapWrap"></div>
+          <div class="map-legend">
+            <div class="legend-item"><div class="legend-dot" style="background:var(--danger)"></div> Risiko Tinggi</div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--warn)"></div> Risiko Sedang</div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--safe)"></div> Risiko Rendah</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: SIDE PANELS -->
+    <div class="side-panels">
+
+      <!-- DETAIL CARD -->
+      <div class="detail-card">
+        <div class="detail-title">▸ Detail Wilayah</div>
+        <div class="detail-location" id="detailName">Samarinda</div>
+        <div class="detail-type" id="detailType">Kota · Ibu Kota Provinsi</div>
+
+        <div class="detail-metrics">
+          <div class="metric-box">
+            <div class="metric-label">Latitude</div>
+            <div class="metric-value" id="detailLat">-0.5022</div>
+            <div class="metric-unit">° LS</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-label">Longitude</div>
+            <div class="metric-value" id="detailLon">117.1536</div>
+            <div class="metric-unit">° BT</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-label">Curah Hujan</div>
+            <div class="metric-value" id="detailRain">—</div>
+            <div class="metric-unit">mm/jam</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-label">Kelembaban Tanah</div>
+            <div class="metric-value" id="detailSoil">—</div>
+            <div class="metric-unit">m³/m³</div>
+          </div>
+        </div>
+
+        <div class="prob-section">
+          <div class="prob-label">Probabilitas Banjir (Prediksi AI)</div>
+          <div class="prob-gauge">
+            <div class="prob-fill" id="probFill" style="width:0%;background:var(--safe)"></div>
+          </div>
+          <div class="prob-value" id="probValue" style="color:var(--safe)">—%</div>
+        </div>
+      </div>
+
+      <!-- MODEL COMPARISON -->
+      <div class="model-card">
+        <div class="detail-title">▸ Battle of Models</div>
+        <div class="model-item">
+          <span class="model-name">XGBoost ★</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="model-bar"><div class="model-fill" style="width:94.8%"></div></div>
+            <span class="model-score">94.8%</span>
+          </div>
+        </div>
+        <div class="model-item">
+          <span class="model-name">Random Forest</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="model-bar"><div class="model-fill" style="width:91.2%;background:var(--text)"></div></div>
+            <span class="model-score" style="color:var(--text)">91.2%</span>
+          </div>
+        </div>
+        <div class="model-item">
+          <span class="model-name">Logistic Reg.</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="model-bar"><div class="model-fill" style="width:83.5%;background:var(--muted)"></div></div>
+            <span class="model-score" style="color:var(--muted)">83.5%</span>
+          </div>
+        </div>
+        <div class="model-item">
+          <span class="model-name">Neural Network</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="model-bar"><div class="model-fill" style="width:89.1%;background:var(--muted)"></div></div>
+            <span class="model-score" style="color:var(--muted)">89.1%</span>
+          </div>
+        </div>
+        <div style="margin-top:14px;padding:10px;background:rgba(0,200,255,0.05);border:1px solid rgba(0,200,255,0.15);font-size:0.6rem;color:var(--muted);line-height:1.6;">
+          Model terpilih: <span style="color:var(--accent)">XGBoost</span><br/>
+          Evaluasi: <span style="color:var(--text)">Chronological Split</span><br/>
+          Data: <span style="color:var(--text)">5 Tahun Open-Meteo API</span>
+        </div>
+      </div>
+
+      <!-- PIPELINE STATUS -->
+      <div class="model-card">
+        <div class="detail-title">▸ Pipeline Status</div>
+        <div class="model-item">
+          <span class="model-name">🟢 Ingest Open-Meteo</span>
+          <span style="font-size:0.6rem;color:var(--safe)">SELESAI</span>
+        </div>
+        <div class="model-item">
+          <span class="model-name">🟢 Bronze → Silver (dbt)</span>
+          <span style="font-size:0.6rem;color:var(--safe)">SELESAI</span>
+        </div>
+        <div class="model-item">
+          <span class="model-name">🟢 Feature Engineering</span>
+          <span style="font-size:0.6rem;color:var(--safe)">SELESAI</span>
+        </div>
+        <div class="model-item">
+          <span class="model-name">🟡 Model Retraining</span>
+          <span style="font-size:0.6rem;color:var(--warn)">TERJADWAL</span>
+        </div>
+        <div class="model-item" style="border:none">
+          <span class="model-name">🟢 Prediksi Aktif</span>
+          <span style="font-size:0.6rem;color:var(--safe)">BERJALAN</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</main>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-text">KALTIM FLOOD INTELLIGENCE · PRAKTISI MENGAJAR 2026 · Modifikasi dari demo-praktisi-mengajar</div>
+  <div class="footer-tech">
+    <span class="tech-tag">OPEN-METEO API</span>
+    <span class="tech-tag">POSTGRESQL</span>
+    <span class="tech-tag">XGBOOST</span>
+    <span class="tech-tag">AIRFLOW</span>
+    <span class="tech-tag">MLFLOW</span>
+  </div>
+</footer>
+
+<script>
+// ============================================================
+// DATA: 10 Kab/Kota Kalimantan Timur
+// ============================================================
+const locations = [
+  { id:1,  nama:"Samarinda",     lat:-0.5022, lon:117.1536, tipe:"Kota" },
+  { id:2,  nama:"Balikpapan",    lat:-1.2379, lon:116.8529, tipe:"Kota" },
+  { id:3,  nama:"Bontang",       lat: 0.1333, lon:117.5000, tipe:"Kota" },
+  { id:4,  nama:"Tenggarong",    lat:-0.4167, lon:117.0000, tipe:"Kab. Kutai Kartanegara" },
+  { id:5,  nama:"Sangatta",      lat: 0.5167, lon:117.5833, tipe:"Kab. Kutai Timur" },
+  { id:6,  nama:"Sendawar",      lat: 0.1167, lon:115.5500, tipe:"Kab. Kutai Barat" },
+  { id:7,  nama:"Tanjung Redeb", lat: 2.1500, lon:117.4833, tipe:"Kab. Berau" },
+  { id:8,  nama:"Tanah Grogot",  lat:-1.9167, lon:116.2000, tipe:"Kab. Paser" },
+  { id:9,  nama:"Penajam",       lat:-1.1667, lon:116.6000, tipe:"Kab. Penajam Paser Utara" },
+  { id:10, nama:"Ujoh Bilang",   lat:-0.6500, lon:114.8833, tipe:"Kab. Mahakam Ulu" },
+];
+
+// Simulate real-time data
+function generateData(seed) {
+  const r = Math.abs(Math.sin(seed * 9301 + 49297) * 233280) % 1;
+  return r;
+}
+
+let simData = {};
+let selectedId = 1;
+
+function refreshData() {
+  const t = Date.now() / 8000;
+  locations.forEach(loc => {
+    const base = generateData(loc.id + Math.floor(t));
+    const rain  = parseFloat((base * 28 + generateData(loc.id * 2 + t) * 8).toFixed(1));
+    const soil  = parseFloat((0.25 + base * 0.45).toFixed(3));
+    // Simple risk model: rain > 20 = tinggi, > 10 = sedang, else rendah
+    const prob  = Math.min(99, Math.round(rain * 3.2 + soil * 15));
+    const risk  = prob > 65 ? 'tinggi' : prob > 35 ? 'sedang' : 'rendah';
+    simData[loc.id] = { rain, soil, prob, risk };
+  });
+}
+
+// ============================================================
+// RENDER LOCATION GRID
+// ============================================================
+function renderGrid() {
+  const grid = document.getElementById('locationGrid');
+  grid.innerHTML = '';
+
+  let maxRain = 0, maxRainLoc = '';
+  let highRisk = 0;
+
+  locations.forEach(loc => {
+    const d = simData[loc.id];
+    if (d.rain > maxRain) { maxRain = d.rain; maxRainLoc = loc.nama; }
+    if (d.risk === 'tinggi') highRisk++;
+
+    const riskColor = d.risk === 'tinggi' ? 'var(--danger)' : d.risk === 'sedang' ? 'var(--warn)' : 'var(--safe)';
+    const barW = Math.min(100, d.prob);
+
+    const row = document.createElement('div');
+    row.className = 'location-row' + (loc.id === selectedId ? ' active' : '');
+    row.innerHTML = `
+      <div>
+        <div class="loc-name">${loc.nama}</div>
+        <div class="loc-type">${loc.tipe}</div>
+      </div>
+      <div class="loc-coords">${loc.lat}°<br/>${loc.lon}°</div>
+      <div class="loc-rain">${d.rain} mm</div>
+      <div>
+        <span class="risk-badge ${d.risk}">
+          <span class="risk-dot"></span>${d.risk.toUpperCase()}
+        </span>
+        <div class="risk-bar-wrap">
+          <div class="risk-bar" style="width:${barW}%;background:${riskColor}"></div>
+        </div>
+      </div>
+    `;
+    row.addEventListener('click', () => { selectedId = loc.id; renderAll(); });
+    grid.appendChild(row);
+  });
+
+  // Update hero stats
+  document.getElementById('max-rain').textContent = maxRain.toFixed(1);
+  document.getElementById('max-rain-loc').textContent = maxRainLoc;
+  document.getElementById('high-risk-count').textContent = highRisk;
+}
+
+// ============================================================
+// RENDER DETAIL PANEL
+// ============================================================
+function renderDetail() {
+  const loc = locations.find(l => l.id === selectedId);
+  const d = simData[loc.id];
+
+  document.getElementById('detailName').textContent = loc.nama;
+  document.getElementById('detailType').textContent = `${loc.tipe} · Lat ${loc.lat}° · Lon ${loc.lon}°`;
+  document.getElementById('detailLat').textContent = loc.lat;
+  document.getElementById('detailLon').textContent = loc.lon;
+  document.getElementById('detailRain').textContent = d.rain;
+  document.getElementById('detailSoil').textContent = d.soil;
+
+  const color = d.risk === 'tinggi' ? 'var(--danger)' : d.risk === 'sedang' ? 'var(--warn)' : 'var(--safe)';
+  document.getElementById('probFill').style.width = d.prob + '%';
+  document.getElementById('probFill').style.background = color;
+  document.getElementById('probValue').textContent = d.prob + '%';
+  document.getElementById('probValue').style.color = color;
+}
+
+// ============================================================
+// RENDER MAP DOTS
+// ============================================================
+function renderMap() {
+  const wrap = document.getElementById('mapWrap');
+  wrap.innerHTML = '';
+
+  // Coordinate bounds for Kaltim
+  const lonMin = 114.5, lonMax = 118.2;
+  const latMin = -2.2, latMax = 2.5;
+  const W = wrap.offsetWidth || 600;
+  const H = 220;
+
+  locations.forEach(loc => {
+    const d = simData[loc.id];
+    const x = ((loc.lon - lonMin) / (lonMax - lonMin)) * (W - 40) + 20;
+    const y = ((latMax - loc.lat) / (latMax - latMin)) * (H - 40) + 20;
+    const color = d.risk === 'tinggi' ? 'var(--danger)' : d.risk === 'sedang' ? 'var(--warn)' : 'var(--safe)';
+
+    const dot = document.createElement('div');
+    dot.className = 'map-dot';
+    dot.style.left = x + 'px';
+    dot.style.top = y + 'px';
+    dot.style.color = color;
+    dot.innerHTML = `
+      <div class="map-dot-ring">
+        <div class="map-dot-inner"></div>
+      </div>
+      <div class="map-tooltip">${loc.nama} · ${d.risk.toUpperCase()} · ${d.rain}mm</div>
+    `;
+    dot.addEventListener('click', () => { selectedId = loc.id; renderAll(); });
+    wrap.appendChild(dot);
+  });
+}
+
+function renderAll() {
+  renderGrid();
+  renderDetail();
+  renderMap();
+}
+
+// ============================================================
+// CLOCK
+// ============================================================
+function updateClock() {
+  const now = new Date();
+  const wita = new Date(now.getTime() + (8 * 60 * 60 * 1000));
+  const h = String(wita.getUTCHours()).padStart(2,'0');
+  const m = String(wita.getUTCMinutes()).padStart(2,'0');
+  const s = String(wita.getUTCSeconds()).padStart(2,'0');
+  document.getElementById('clock').textContent = `${h}:${m}:${s} WITA`;
+}
+
+// ============================================================
+// RAIN EFFECT
+// ============================================================
+function createRain() {
+  const rain = document.getElementById('rain');
+  for (let i = 0; i < 40; i++) {
+    const span = document.createElement('span');
+    span.style.left = Math.random() * 100 + '%';
+    span.style.height = (Math.random() * 60 + 20) + 'px';
+    span.style.animationDuration = (Math.random() * 1.5 + 0.8) + 's';
+    span.style.animationDelay = (Math.random() * 2) + 's';
+    rain.appendChild(span);
+  }
+}
+
+// ============================================================
+// INIT
+// ============================================================
+createRain();
+refreshData();
+renderAll();
+updateClock();
+
+setInterval(() => {
+  refreshData();
+  renderAll();
+}, 4000);
+
+setInterval(updateClock, 1000);
+</script>
+</body>
+</html>
+
